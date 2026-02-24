@@ -14,13 +14,205 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          created_at: string
+          id: string
+          industry: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          industry?: string
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          industry?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checklist_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          item_key: string
+          system_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_key: string
+          system_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_key?: string
+          system_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          onboarding_completed: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          onboarding_completed?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          onboarding_completed?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      readiness_snapshots: {
+        Row: {
+          business_id: string
+          id: string
+          score: number
+          snapshot_at: string
+          stage: string
+        }
+        Insert: {
+          business_id: string
+          id?: string
+          score?: number
+          snapshot_at?: string
+          stage?: string
+        }
+        Update: {
+          business_id?: string
+          id?: string
+          score?: number
+          snapshot_at?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_snapshots_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string
+          trial_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string
+          trial_start?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string
+          trial_start?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      systems: {
+        Row: {
+          badge_level: number
+          business_id: string
+          created_at: string
+          id: string
+          is_activated: boolean
+          system_key: string
+          updated_at: string
+        }
+        Insert: {
+          badge_level?: number
+          business_id: string
+          created_at?: string
+          id?: string
+          is_activated?: boolean
+          system_key: string
+          updated_at?: string
+        }
+        Update: {
+          badge_level?: number
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_activated?: boolean
+          system_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "systems_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_business_owner: { Args: { _business_id: string }; Returns: boolean }
+      is_system_owner: { Args: { _system_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
