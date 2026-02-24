@@ -112,6 +112,14 @@ const Auth = () => {
                       ? 'Sign In'
                       : 'Create Account'}
               </Button>
+              {view === 'signup' && (
+                <p className="text-xs text-center text-muted-foreground">
+                  By creating an account, you agree to our{' '}
+                  <a href="https://www.blanebmedia.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Terms of Service</a>{' '}
+                  and{' '}
+                  <a href="https://www.blanebmedia.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Privacy Policy</a>.
+                </p>
+              )}
               {view === 'login' && (
                 <button
                   type="button"

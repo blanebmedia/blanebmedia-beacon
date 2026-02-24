@@ -232,7 +232,11 @@ const Index = () => {
       <footer className="border-t border-border px-6 py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
           <span className="font-display text-lg font-bold">Beacon</span>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Beacon. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <a href="https://www.blanebmedia.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href="https://www.blanebmedia.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <span>© {new Date().getFullYear()} Beacon</span>
+          </div>
         </div>
       </footer>
     </div>
