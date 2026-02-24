@@ -63,11 +63,15 @@ const Auth = () => {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">{isLogin ? 'Sign In' : 'Create Account'}</CardTitle>
+            <CardTitle className="text-xl">
+              {view === 'forgot' ? 'Reset Password' : view === 'login' ? 'Sign In' : 'Create Account'}
+            </CardTitle>
             <CardDescription>
-              {isLogin
-                ? 'Enter your credentials to access your dashboard.'
-                : 'Start your 14-day Founder Trial.'}
+              {view === 'forgot'
+                ? "Enter your email and we'll send a reset link."
+                : view === 'login'
+                  ? 'Enter your credentials to access your dashboard.'
+                  : 'Start your 14-day Founder Trial.'}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -83,29 +87,50 @@ const Auth = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                />
-              </div>
+              {view !== 'forgot' && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+                {loading
+                  ? 'Loading...'
+                  : view === 'forgot'
+                    ? 'Send Reset Link'
+                    : view === 'login'
+                      ? 'Sign In'
+                      : 'Create Account'}
               </Button>
+              {view === 'login' && (
+                <button
+                  type="button"
+                  onClick={() => setView('forgot')}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Forgot password?
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => setView(view === 'login' ? 'signup' : 'login')}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                {view === 'forgot'
+                  ? 'Back to Sign In'
+                  : view === 'login'
+                    ? "Don't have an account? Sign up"
+                    : 'Already have an account? Sign in'}
               </button>
             </CardFooter>
           </form>
