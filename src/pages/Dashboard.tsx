@@ -180,12 +180,12 @@ const Dashboard = () => {
         {/* Paused banner */}
         {isPaused && (
           <Card className="border-destructive bg-destructive/5">
-            <CardContent className="flex items-center justify-between py-4">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-foreground">Your trial has expired</p>
                 <p className="text-sm text-muted-foreground">Subscribe to Beacon Pro to unlock all 8 systems and resume progress.</p>
               </div>
-              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+              <Button className="shrink-0" onClick={handleSubscribe}>Subscribe — $19/mo</Button>
             </CardContent>
           </Card>
         )}
