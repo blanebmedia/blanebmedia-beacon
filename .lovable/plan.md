@@ -1,27 +1,35 @@
 
+# Mobile Responsiveness Fixes (375px viewport)
 
-# Add Terms of Service and Privacy Policy Links
+## Findings
 
-## Overview
+After reviewing the landing page and dashboard at 375px width:
 
-Link to your existing legal pages (blanebmedia.com/terms and blanebmedia.com/privacy) from the landing page footer and the sign-up form.
+- **Landing page**: Hero, sections, and systems grid all render well. The footer links row is slightly tight but functional since the layout already stacks vertically on mobile via `flex-col` / `sm:flex-row`.
+- **Dashboard header**: The header packs the business name, a status badge, "Manage Subscription" button, and "Sign Out" button in a single `flex justify-between` row -- this will overflow or cramp on 375px screens.
+- **Dashboard banners** (paused/trial/suggestion cards): Each uses `flex items-center justify-between` with text on the left and a button on the right -- these will squeeze together on narrow screens.
 
 ## Changes
 
-### 1. Landing page footer (`src/pages/Index.tsx`)
+### 1. Dashboard header (`src/pages/Dashboard.tsx`, lines 163-176)
 
-- Add "Terms of Service" and "Privacy Policy" links next to the copyright text
-- Links open in a new tab pointing to your existing pages
+- Stack the header vertically on mobile: business name/title on top, action buttons below
+- Use `flex-col sm:flex-row` for the outer container
+- Wrap the action buttons with `flex-wrap` so they flow naturally on small screens
 
-### 2. Auth page (`src/pages/Auth.tsx`)
+### 2. Dashboard banners (paused, trial, suggestion cards)
 
-- Add a small disclaimer below the "Create Account" button (visible only in signup view):
-  *"By creating an account, you agree to our Terms of Service and Privacy Policy."*
-- Both link to your blanebmedia.com pages in a new tab
+- Change the banner `CardContent` layout from `flex items-center justify-between` to `flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`
+- This makes the text stack above the button on mobile, and sit side-by-side on wider screens
+- Applies to three cards: paused banner (~line 183), trial banner (~line 196), and suggestion card (~line 244)
+
+### 3. Landing page footer (minor polish, `src/pages/Index.tsx`, line 235)
+
+- Add `flex-wrap justify-center` to the footer links row so items wrap gracefully if viewport is very narrow
+- This is a minor improvement; the current layout already works adequately
 
 ## Technical Details
 
-- Two files modified: `src/pages/Index.tsx` (footer section) and `src/pages/Auth.tsx` (signup footer)
-- External links use `target="_blank"` and `rel="noopener noreferrer"`
-- No new pages or database changes required
-
+- All fixes use responsive Tailwind utilities (`flex-col sm:flex-row`, `flex-wrap`)
+- No structural or component changes required
+- Two files modified: `src/pages/Dashboard.tsx` and `src/pages/Index.tsx`
