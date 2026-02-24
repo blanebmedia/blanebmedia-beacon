@@ -241,12 +241,12 @@ const Dashboard = () => {
         {/* Suggestion */}
         {suggestion && !isPaused && (
           <Card className="border-accent/30 bg-accent/5">
-            <CardContent className="flex items-center justify-between py-4">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-foreground">Suggested Next: {SYSTEMS_REGISTRY.find(s => s.key === suggestion.key)?.name}</p>
                 <p className="text-sm text-muted-foreground">{suggestion.reason}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate(`/system/${suggestion.key}`)}>
+              <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate(`/system/${suggestion.key}`)}>
                 View System
               </Button>
             </CardContent>
