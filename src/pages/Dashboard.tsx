@@ -23,10 +23,24 @@ const Dashboard = () => {
   const { user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { subscribed, status, trialEnd, loading: subLoading } = useSubscription();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { subscribed, status, trialEnd, loading: subLoading, checkNow } = useSubscription();
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Handle checkout return
+  useEffect(() => {
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast({ title: 'Subscription Active!', description: 'Welcome to Beacon Pro. All 8 systems are now unlocked.' });
+      checkNow();
+      setSearchParams({}, { replace: true });
+    } else if (checkoutStatus === 'cancel') {
+      toast({ title: 'Checkout Cancelled', description: 'No changes were made to your account.' });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;
