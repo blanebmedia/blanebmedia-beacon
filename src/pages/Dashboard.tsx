@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { useSubscription } from '@/hooks/use-subscription';
 import { SYSTEMS_REGISTRY, type SystemKey } from '@/modules/systems/registry';
 import { calculateBadgeLevel, getBadgeLevelLabel, type BadgeLevel } from '@/modules/scoring/badge';
 import { calculateReadiness } from '@/modules/scoring/score';
@@ -18,17 +19,12 @@ interface SystemData {
   completed_count: number;
 }
 
-interface SubscriptionData {
-  status: string;
-  trial_end: string;
-}
-
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { subscribed, status, trialEnd, loading: subLoading } = useSubscription();
   const [systems, setSystems] = useState<SystemData[]>([]);
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +34,6 @@ const Dashboard = () => {
   }, [user]);
 
   const checkOnboardingAndLoad = async () => {
-    // Check if onboarding is completed
     const { data: profile } = await supabase
       .from('profiles')
       .select('onboarding_completed')
@@ -49,13 +44,11 @@ const Dashboard = () => {
       navigate('/onboarding');
       return;
     }
-
     loadDashboard();
   };
 
   const loadDashboard = async () => {
     try {
-      // Load business
       const { data: biz } = await supabase
         .from('businesses')
         .select('id, name')
@@ -64,8 +57,6 @@ const Dashboard = () => {
 
       if (biz) {
         setBusinessName(biz.name || 'Your Business');
-
-        // Load systems with checklist counts
         const { data: systemRows } = await supabase
           .from('systems')
           .select('id, system_key, is_activated, badge_level')
@@ -85,14 +76,6 @@ const Dashboard = () => {
           setSystems(withCounts);
         }
       }
-
-      // Load subscription
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('status, trial_end')
-        .eq('user_id', user!.id)
-        .single();
-      if (sub) setSubscription(sub);
     } catch (err) {
       console.error(err);
     } finally {
@@ -105,6 +88,30 @@ const Dashboard = () => {
     navigate('/auth');
   };
 
+  const handleSubscribe = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch (err) {
+      toast({ title: 'Error', description: 'Could not start checkout. Please try again.', variant: 'destructive' });
+    }
+  };
+
+  const handleManageBilling = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch (err) {
+      toast({ title: 'Error', description: 'Could not open billing portal.', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -113,6 +120,10 @@ const Dashboard = () => {
     );
   }
 
+  const isPaused = status === 'paused';
+  const isTrialing = status === 'trialing';
+  const daysRemaining = trialEnd ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / 86400000)) : 0;
+
   const activatedCount = systems.filter((s) => s.is_activated).length;
   const readinessInput = systems.map((s) => ({
     systemKey: s.system_key,
@@ -120,10 +131,9 @@ const Dashboard = () => {
   }));
   const { score, stage, visible } = calculateReadiness(readinessInput);
 
-  const statusLabel = subscription?.status === 'active' ? 'Active' : subscription?.status === 'paused' ? 'Paused' : 'Trialing';
-  const statusVariant = subscription?.status === 'active' ? 'default' : subscription?.status === 'paused' ? 'destructive' : 'secondary';
+  const statusLabel = subscribed ? 'Active' : isPaused ? 'Paused' : 'Trialing';
+  const statusVariant = subscribed ? 'default' : isPaused ? 'destructive' : 'secondary';
 
-  // Suggested next system
   const suggestNext = (): { key: SystemKey; reason: string } | null => {
     if (!systems.some((s) => s.badge_level >= 2)) return null;
     const finance = systems.find((s) => s.system_key === 'finance');
@@ -136,7 +146,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
@@ -145,12 +154,45 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant={statusVariant}>{statusLabel}</Badge>
+            {subscribed && (
+              <Button variant="outline" size="sm" onClick={handleManageBilling}>Manage Subscription</Button>
+            )}
             <Button variant="ghost" size="sm" onClick={handleSignOut}>Sign Out</Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-8">
+        {/* Paused banner */}
+        {isPaused && (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-medium text-foreground">Your trial has expired</p>
+                <p className="text-sm text-muted-foreground">Subscribe to Beacon Pro to unlock all 8 systems and resume progress.</p>
+              </div>
+              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Trial banner */}
+        {isTrialing && !isPaused && (
+          <Card className={`border-accent/30 ${daysRemaining <= 3 ? 'border-destructive bg-destructive/5' : 'bg-accent/5'}`}>
+            <CardContent className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-medium text-foreground">
+                  {daysRemaining <= 3 ? `⚠ Trial ending soon — ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left` : `Founder Trial — ${daysRemaining} days remaining`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {daysRemaining <= 3 ? 'Subscribe now to keep your progress and unlock all systems.' : 'You can activate up to 2 systems during your trial.'}
+                </p>
+              </div>
+              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Score Section */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2">
@@ -183,7 +225,7 @@ const Dashboard = () => {
         </div>
 
         {/* Suggestion */}
-        {suggestion && (
+        {suggestion && !isPaused && (
           <Card className="border-accent/30 bg-accent/5">
             <CardContent className="flex items-center justify-between py-4">
               <div>
@@ -210,8 +252,9 @@ const Dashboard = () => {
               return (
                 <Card
                   key={def.key}
-                  className={`transition-all ${isActivated ? 'cursor-pointer hover:shadow-md hover:border-accent/50' : 'opacity-75'}`}
+                  className={`transition-all ${isPaused ? 'opacity-60 cursor-not-allowed' : isActivated ? 'cursor-pointer hover:shadow-md hover:border-accent/50' : 'opacity-75'}`}
                   onClick={() => {
+                    if (isPaused) return;
                     if (isActivated || def.isActiveInPhase1) navigate(`/system/${def.key}`);
                   }}
                 >
