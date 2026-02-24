@@ -34,8 +34,24 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    loadDashboard();
+    checkOnboardingAndLoad();
   }, [user]);
+
+  const checkOnboardingAndLoad = async () => {
+    // Check if onboarding is completed
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('user_id', user!.id)
+      .single();
+
+    if (profile && !profile.onboarding_completed) {
+      navigate('/onboarding');
+      return;
+    }
+
+    loadDashboard();
+  };
 
   const loadDashboard = async () => {
     try {

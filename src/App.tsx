@@ -29,6 +29,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/system/:systemKey" element={<ProtectedRoute><SystemChecklist /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/welcome" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
