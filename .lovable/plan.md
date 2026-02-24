@@ -1,78 +1,99 @@
 
 
-# Beacon — Phase 1 MVP Implementation Plan
+# Stripe Checkout Integration: 14-Day Founder Trial
 
 ## Overview
-Beacon is a **Business Systems Readiness Platform** that helps founders assess and improve their operational maturity across 8 business systems. Phase 1 delivers the core loop: onboarding → system activation → checklists → badges → Brand Readiness Score.
+
+Integrate Stripe billing into Beacon with a 14-day Founder Trial. New users start trialing with a 2-system activation cap. After subscribing to Beacon Pro ($19/month), they unlock all 8 systems.
+
+## Stripe Product
+
+- **Product**: Beacon Pro (`prod_U2SBVJGVpgk9Oa`)
+- **Price**: $19/month (`price_1T4NGhEFaP20Ysw8VVszBcHq`)
 
 ---
 
-## Step 1: Backend Setup (Supabase + Auth)
-- Enable Supabase for database and authentication
-- Set up **email/password auth** with a profiles table
-- Create database tables:
-  - `businesses` (name, industry, linked to user)
-  - `systems` (8 rows per business, tracking activation status & badge level)
-  - `checklist_items` (5 per system, tracking completion)
-  - `subscriptions` (status: trialing/active/paused, trial dates)
-  - `readiness_snapshots` (frozen score & stage for paused accounts)
-- Add Row Level Security so each user only sees their own data
+## What Gets Built
 
-## Step 2: Systems Registry & Core Logic
-- Build a **registry of all 8 systems** with metadata (name, description, checklist definitions, "Common Starting Point" tags for Marketing & Finance)
-- Implement **badge level calculation**: 0 items → Level 0, 1–2 → Level 1, 3–4 → Level 2, 5 → Level 3
-- Implement **Brand Readiness Score** (0–100): Level 2 = 6.25 pts, Level 3 = 12.5 pts per system
-- Implement **Readiness Stage** mapping (Emerging → Exit Ready) with the **floor rule**: stage can't exceed "Structured" unless both Marketing and Finance are at Level 2+
-- Score stays **hidden** until at least one system reaches Level 2
-- Add unit tests for badge mapping, score calculation, stage + floor rule
+### 1. Three Backend Functions
 
-## Step 3: Onboarding Wizard (5 Steps)
-- **Step 1 – Welcome**: "Activate your first system to unlock your Brand Readiness."
-- **Step 2 – Business Profile**: Business name + industry input
-- **Step 3 – Choose First System**: Grid of all 8 systems with descriptions; Marketing & Finance tagged as "Common Starting Points"
-- **Step 4 – Complete Checklist**: Show the 5 checklist items for the chosen system
-- **Step 5 – Score Reveal**: If system reaches Level 2+, show score & stage; otherwise prompt "Complete 3 items to unlock Brand Readiness"
+**`create-checkout`** -- Creates a Stripe Checkout session for the authenticated user. Looks up or creates a Stripe customer by email, then redirects to Stripe's hosted checkout page for the $19/month subscription.
 
-## Step 4: Executive Dashboard
-- **Brand Readiness Score** display (or "Activate a system to calculate" placeholder)
-- **Readiness Stage** label with visual indicator
-- **Account Status**: Trialing / Active / Paused badge
-- **Activation count**: "You've activated X of 8 systems"
-- **8-System Grid**: Each system card shows badge level, status label, and brief description
-  - Active systems are clickable → opens checklist page
-  - Inactive systems show "Activating Soon" (no lock/barrier language)
-- **Suggested Next System** panel after a system hits Level 2+
+**`check-subscription`** -- Queries Stripe for the user's active subscription status. Called on page load and periodically. Returns whether the user is subscribed, plus subscription end date. Also syncs status back to the `subscriptions` table (updates `stripe_customer_id`, `stripe_subscription_id`, and `status`).
 
-## Step 5: System Checklist Pages
-- **Marketing & Finance**: Fully interactive — 5 checkboxes per system, badge recalculates on toggle
-- **Other 6 systems**: Read-only preview with grayed-out checklist items
-- Badge level indicator updates live as items are checked/unchecked
-- Score only recalculates when a badge **crosses a threshold** (reaches Level 2 or Level 3), not on every checkbox
+**`customer-portal`** -- Creates a Stripe Customer Portal session so users can manage billing, cancel, or update payment methods.
 
-## Step 6: Trial & Billing (Stripe)
-- Enable Stripe integration for subscription checkout
-- **14-day Founder Trial** (card required at signup via Stripe Checkout)
-- **2-system activation cap** during trial — attempting a 3rd shows upgrade modal
-- **Trial expiry without subscription**:
-  - Dashboard becomes read-only
-  - Score & badges freeze (snapshot stored)
-  - Status shows "Paused" with "Resume by subscribing" CTA
-- **After subscribing**: activation cap removed, full access restored
+### 2. Subscription State Hook
 
-## Step 7: Design & Polish
-- **Navy / slate / gold** professional color palette
-- Clean, executive-grade typography and spacing
-- Responsive layout (desktop-first, mobile-friendly)
-- Smooth transitions for score reveals and badge level changes
+A new `useSubscription` hook that:
+- Calls `check-subscription` on mount and every 60 seconds
+- Exposes `{ subscribed, loading, checkNow }` to any component
+- Used by Dashboard and SystemChecklist to gate features
+
+### 3. Dashboard Updates
+
+- Show a **"Subscribe to Beacon Pro"** banner when the user is trialing, with days remaining in trial
+- Add a **"Manage Subscription"** button when subscribed
+- Show trial expiry warning when less than 3 days remain
+- When trial has expired and user hasn't subscribed, show a frozen/read-only state
+
+### 4. System Activation Cap Enforcement
+
+The existing 2-system cap in `SystemChecklist.tsx` already checks `sub.status === 'trialing'`. This will be enhanced:
+- If `subscribed === true` (active Stripe subscription), remove the cap entirely
+- If trialing and under 2 activations, allow activation
+- If trial expired (`status === 'paused'`), block all interactions and show upgrade prompt
+
+### 5. Trial Expiry Logic
+
+- The `check-subscription` function checks if `trial_end` has passed and no active Stripe subscription exists
+- If expired, it updates `subscriptions.status` to `'paused'`
+- Dashboard renders read-only when paused
 
 ---
 
-## What This Delivers
-A complete MVP where a founder can sign up, activate up to 2 systems during trial, complete checklists to earn badges, see their Brand Readiness Score evolve, and subscribe to unlock all 8 systems.
+## Technical Details
 
-## Phase 2 Hooks (not built now, but architecture supports)
-- Time-based checklist staleness / regression
-- Additional system activation beyond Marketing & Finance
-- Detailed analytics per system
-- Team/advisor views
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/create-checkout/index.ts` | Stripe Checkout session creation |
+| `supabase/functions/check-subscription/index.ts` | Subscription status verification |
+| `supabase/functions/customer-portal/index.ts` | Stripe billing portal access |
+| `src/hooks/use-subscription.ts` | Frontend subscription state hook |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `supabase/config.toml` | Add `verify_jwt = false` for all 3 functions |
+| `src/pages/Dashboard.tsx` | Add subscribe/manage buttons, trial banner, paused state |
+| `src/pages/SystemChecklist.tsx` | Use subscription state for activation gating |
+
+### Edge Function Auth Pattern
+
+All three functions validate the JWT in code using the Supabase client's `getUser()`, rather than relying on `verify_jwt` in config. This follows the project's signing-keys setup.
+
+### Subscription Flow
+
+```text
+New User Signs Up
+       |
+       v
+  14-day Trial (2 system cap)
+       |
+       +---> Clicks "Subscribe" ---> Stripe Checkout ---> Active Subscriber (all 8 systems)
+       |
+       +---> Trial Expires ---> Status = "paused" ---> Dashboard frozen, upgrade prompt shown
+```
+
+### Data Sync
+
+The `check-subscription` function syncs Stripe data back to the `subscriptions` table:
+- `stripe_customer_id` -- stored on first checkout
+- `stripe_subscription_id` -- stored when active subscription found
+- `status` -- kept in sync (`trialing` / `active` / `paused`)
+
+This keeps the local DB as a cache while Stripe remains the source of truth.
 
