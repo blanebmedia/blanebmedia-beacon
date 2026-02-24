@@ -25,18 +25,18 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 const stepVariants = {
   initial: { opacity: 0, x: 40, scale: 0.97 },
-  animate: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } },
-  exit: { opacity: 0, x: -40, scale: 0.97, transition: { duration: 0.25, ease: [0.4, 0, 1, 1] } },
+  animate: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const } },
+  exit: { opacity: 0, x: -40, scale: 0.97, transition: { duration: 0.25, ease: [0.4, 0, 1, 1] as const } },
 };
 
 const scoreRevealVariants = {
   initial: { opacity: 0, scale: 0.5, y: 20 },
-  animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 120, damping: 12, delay: 0.2 } },
+  animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring' as const, stiffness: 120, damping: 12, delay: 0.2 } },
 };
 
 const badgePopVariants = {
   initial: { opacity: 0, scale: 0.6 },
-  animate: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 15 } },
+  animate: { opacity: 1, scale: 1, transition: { type: 'spring' as const, stiffness: 300, damping: 15 } },
 };
 
 const checklistItemVariants = {
@@ -44,7 +44,7 @@ const checklistItemVariants = {
   animate: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.06, duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+    transition: { delay: i * 0.06, duration: 0.3, ease: [0.4, 0, 0.2, 1] as const },
   }),
 };
 
