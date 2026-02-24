@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { useSubscription } from '@/hooks/use-subscription';
 import { getSystemDefinition, type SystemKey } from '@/modules/systems/registry';
 import { calculateBadgeLevel, getBadgeLevelLabel, type BadgeLevel } from '@/modules/scoring/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,13 +19,16 @@ interface ChecklistItemData {
 
 const SystemChecklist = () => {
   const { systemKey } = useParams<{ systemKey: string }>();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const { subscribed, status } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [items, setItems] = useState<ChecklistItemData[]>([]);
   const [systemId, setSystemId] = useState<string | null>(null);
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const isPaused = status === 'paused';
 
   const def = (() => {
     try { return getSystemDefinition(systemKey as SystemKey); }
@@ -71,8 +75,8 @@ const SystemChecklist = () => {
   };
 
   const handleActivate = async () => {
-    if (!systemId) return;
-    // Check activation cap
+    if (!systemId || isPaused) return;
+
     const { data: biz } = await supabase
       .from('businesses')
       .select('id')
@@ -80,25 +84,22 @@ const SystemChecklist = () => {
       .single();
     if (!biz) return;
 
-    const { count: activatedCount } = await supabase
-      .from('systems')
-      .select('*', { count: 'exact', head: true })
-      .eq('business_id', biz.id)
-      .eq('is_activated', true);
+    // If not subscribed (trialing), enforce 2-system cap
+    if (!subscribed) {
+      const { count: activatedCount } = await supabase
+        .from('systems')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', biz.id)
+        .eq('is_activated', true);
 
-    const { data: sub } = await supabase
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user!.id)
-      .single();
-
-    if (sub?.status === 'trialing' && (activatedCount ?? 0) >= 2) {
-      toast({
-        title: 'Activation Limit',
-        description: "You've activated 2 systems during your Founder Trial. Subscribe to activate all 8 systems.",
-        variant: 'destructive',
-      });
-      return;
+      if ((activatedCount ?? 0) >= 2) {
+        toast({
+          title: 'Activation Limit',
+          description: "You've activated 2 systems during your Founder Trial. Subscribe to activate all 8 systems.",
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     await supabase
@@ -109,11 +110,22 @@ const SystemChecklist = () => {
     toast({ title: 'System Activated', description: `${def?.name} is now active.` });
   };
 
+  const handleSubscribe = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch {
+      toast({ title: 'Error', description: 'Could not start checkout.', variant: 'destructive' });
+    }
+  };
+
   const handleToggle = async (item: ChecklistItemData) => {
-    if (!def?.isActiveInPhase1 || !isActivated) return;
+    if (!def?.isActiveInPhase1 || !isActivated || isPaused) return;
 
     const newCompleted = !item.is_completed;
-    // Optimistic update
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_completed: newCompleted } : i)));
 
     await supabase
@@ -121,7 +133,6 @@ const SystemChecklist = () => {
       .update({ is_completed: newCompleted })
       .eq('id', item.id);
 
-    // Recalculate badge
     const newItems = items.map((i) => (i.id === item.id ? { ...i, is_completed: newCompleted } : i));
     const completedCount = newItems.filter((i) => i.is_completed).length;
     const newBadge = calculateBadgeLevel(completedCount);
@@ -150,7 +161,7 @@ const SystemChecklist = () => {
 
   const completedCount = items.filter((i) => i.is_completed).length;
   const badgeLevel = calculateBadgeLevel(completedCount) as BadgeLevel;
-  const isReadOnly = !def.isActiveInPhase1;
+  const isReadOnly = !def.isActiveInPhase1 || isPaused;
 
   return (
     <div className="min-h-screen bg-background">
@@ -165,6 +176,19 @@ const SystemChecklist = () => {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-8 space-y-6">
+        {/* Paused banner */}
+        {isPaused && (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-medium text-foreground">Your trial has expired</p>
+                <p className="text-sm text-muted-foreground">Subscribe to continue making progress.</p>
+              </div>
+              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -195,14 +219,14 @@ const SystemChecklist = () => {
               </div>
             )}
 
-            {isReadOnly && (
+            {isReadOnly && !isPaused && (
               <div className="mb-6 rounded-lg border border-border bg-muted/50 p-4 text-center">
                 <p className="text-sm text-muted-foreground">Preview only — this system will be available in a future update.</p>
               </div>
             )}
 
             <div className="space-y-3">
-              {def.checklist.map((checkDef, idx) => {
+              {def.checklist.map((checkDef) => {
                 const itemData = items.find((i) => i.item_key === checkDef.key);
                 const checked = itemData?.is_completed ?? false;
                 const disabled = isReadOnly || !isActivated;
