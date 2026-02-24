@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import SystemChecklist from "./pages/SystemChecklist";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
