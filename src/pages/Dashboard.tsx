@@ -161,12 +161,12 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">Beacon</h1>
             <p className="text-sm text-muted-foreground">{businessName}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Badge variant={statusVariant}>{statusLabel}</Badge>
             {subscribed && (
               <Button variant="outline" size="sm" onClick={handleManageBilling}>Manage Subscription</Button>
@@ -180,12 +180,12 @@ const Dashboard = () => {
         {/* Paused banner */}
         {isPaused && (
           <Card className="border-destructive bg-destructive/5">
-            <CardContent className="flex items-center justify-between py-4">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-foreground">Your trial has expired</p>
                 <p className="text-sm text-muted-foreground">Subscribe to Beacon Pro to unlock all 8 systems and resume progress.</p>
               </div>
-              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+              <Button className="shrink-0" onClick={handleSubscribe}>Subscribe — $19/mo</Button>
             </CardContent>
           </Card>
         )}
@@ -193,7 +193,7 @@ const Dashboard = () => {
         {/* Trial banner */}
         {isTrialing && !isPaused && (
           <Card className={`border-accent/30 ${daysRemaining <= 3 ? 'border-destructive bg-destructive/5' : 'bg-accent/5'}`}>
-            <CardContent className="flex items-center justify-between py-4">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-foreground">
                   {daysRemaining <= 3 ? `⚠ Trial ending soon — ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left` : `Founder Trial — ${daysRemaining} days remaining`}
@@ -202,7 +202,7 @@ const Dashboard = () => {
                   {daysRemaining <= 3 ? 'Subscribe now to keep your progress and unlock all systems.' : 'You can activate up to 2 systems during your trial.'}
                 </p>
               </div>
-              <Button onClick={handleSubscribe}>Subscribe — $19/mo</Button>
+              <Button className="shrink-0" onClick={handleSubscribe}>Subscribe — $19/mo</Button>
             </CardContent>
           </Card>
         )}
@@ -241,12 +241,12 @@ const Dashboard = () => {
         {/* Suggestion */}
         {suggestion && !isPaused && (
           <Card className="border-accent/30 bg-accent/5">
-            <CardContent className="flex items-center justify-between py-4">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-foreground">Suggested Next: {SYSTEMS_REGISTRY.find(s => s.key === suggestion.key)?.name}</p>
                 <p className="text-sm text-muted-foreground">{suggestion.reason}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate(`/system/${suggestion.key}`)}>
+              <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate(`/system/${suggestion.key}`)}>
                 View System
               </Button>
             </CardContent>
