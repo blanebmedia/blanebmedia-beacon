@@ -161,12 +161,12 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">Beacon</h1>
             <p className="text-sm text-muted-foreground">{businessName}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Badge variant={statusVariant}>{statusLabel}</Badge>
             {subscribed && (
               <Button variant="outline" size="sm" onClick={handleManageBilling}>Manage Subscription</Button>
