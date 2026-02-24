@@ -1,36 +1,27 @@
 
 
-# Password Reset Flow
+# Add Terms of Service and Privacy Policy Links
 
 ## Overview
 
-Add a "Forgot Password" link to the Auth page and a dedicated `/reset-password` page where users set a new password after clicking the email link.
+Link to your existing legal pages (blanebmedia.com/terms and blanebmedia.com/privacy) from the landing page footer and the sign-up form.
 
-## What Changes
+## Changes
 
-### 1. Auth page (`src/pages/Auth.tsx`)
+### 1. Landing page footer (`src/pages/Index.tsx`)
 
-- Add a "Forgot password?" link visible only in Sign In mode
-- Add a `forgotPassword` view state that shows an email-only form
-- That form calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset-password' })`
-- Shows a toast confirming the reset email was sent
-- Includes a "Back to Sign In" link
+- Add "Terms of Service" and "Privacy Policy" links next to the copyright text
+- Links open in a new tab pointing to your existing pages
 
-### 2. New page: `src/pages/ResetPassword.tsx`
+### 2. Auth page (`src/pages/Auth.tsx`)
 
-- Listens for `SIGNED_IN` or `PASSWORD_RECOVERY` event via `onAuthStateChange`
-- Shows a simple "New Password" + "Confirm Password" form
-- Calls `supabase.auth.updateUser({ password })` to save the new password
-- On success, shows a toast and redirects to the dashboard
-- This is a public route (no auth guard)
+- Add a small disclaimer below the "Create Account" button (visible only in signup view):
+  *"By creating an account, you agree to our Terms of Service and Privacy Policy."*
+- Both link to your blanebmedia.com pages in a new tab
 
-### 3. Router (`src/App.tsx`)
+## Technical Details
 
-- Add `<Route path="/reset-password" element={<ResetPassword />} />` as a public route
-
-## Technical Notes
-
-- No database changes required -- password reset is handled entirely by the authentication system's built-in email flow
-- The reset email uses the default authentication email template (can be customized later with branded templates)
-- The `/reset-password` route must remain outside `ProtectedRoute` since the user arrives unauthenticated via an email link
+- Two files modified: `src/pages/Index.tsx` (footer section) and `src/pages/Auth.tsx` (signup footer)
+- External links use `target="_blank"` and `rel="noopener noreferrer"`
+- No new pages or database changes required
 
