@@ -57,6 +57,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        beacon: {
+          navy: "hsl(var(--beacon-navy))",
+          "navy-deep": "hsl(var(--beacon-navy-deep))",
+          slate: "hsl(var(--beacon-slate))",
+          gold: "hsl(var(--beacon-gold))",
+          "gold-light": "hsl(var(--beacon-gold-light))",
+          success: "hsl(var(--beacon-success))",
+          surface: "hsl(var(--beacon-surface))",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
