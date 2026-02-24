@@ -53,7 +53,7 @@ const Index = () => {
                 Start Your 14-Day Trial <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <span className="text-sm text-muted-foreground">No credit card required to explore.</span>
+            <span className="text-sm text-muted-foreground">14-day free trial. Cancel anytime.</span>
           </div>
         </motion.div>
       </section>
