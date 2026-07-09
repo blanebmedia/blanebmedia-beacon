@@ -15,9 +15,10 @@
 //     "years_in_business"?: string
 //   },
 //   "systems"?: [
-//     { "system_key": "marketing" | "finance" | ...,
+//     { "system_key": "administration" | "training" | "products" | "current_campaign"
+//                    | "growth" | "logistics" | "marketing" | "finance",
 //       "badge_level"?: 0|1|2|3, "is_activated"?: boolean,
-//       "checklist"?: [ { "item_key": "item_1"...., "is_completed": boolean } ]
+//       "checklist"?: [ { "item_key": "item_1" | "item_2" | ... | "item_5", "is_completed": boolean } ]
 //     }
 //   ],
 //   "readiness_snapshot"?: { "score": number, "stage": string }
@@ -33,7 +34,16 @@ const ChecklistSchema = z.object({
 });
 
 const SystemSchema = z.object({
-  system_key: z.string().min(1).max(64),
+  system_key: z.enum([
+    'administration',
+    'training',
+    'products',
+    'current_campaign',
+    'growth',
+    'logistics',
+    'marketing',
+    'finance',
+  ]),
   badge_level: z.number().int().min(0).max(3).optional(),
   is_activated: z.boolean().optional(),
   checklist: z.array(ChecklistSchema).optional(),
