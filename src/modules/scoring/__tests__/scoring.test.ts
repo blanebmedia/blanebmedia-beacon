@@ -44,24 +44,24 @@ describe('calculateBrandReadinessScore', () => {
 
 describe('getReadinessStage', () => {
   it('Emerging for 0', () => expect(getReadinessStage(0)).toBe('Emerging'));
-  it('Structured for 25', () => expect(getReadinessStage(25)).toBe('Structured'));
-  it('Operational for 50', () => expect(getReadinessStage(50)).toBe('Operational'));
+  it('Established for 25', () => expect(getReadinessStage(25)).toBe('Established'));
+  it('Advancing for 50', () => expect(getReadinessStage(50)).toBe('Advancing'));
   it('Scalable for 75', () => expect(getReadinessStage(75)).toBe('Scalable'));
   it('Exit Ready for 100', () => expect(getReadinessStage(100)).toBe('Exit Ready'));
 });
 
 describe('applyFloorRule', () => {
-  it('caps at Structured when marketing < Level 2', () => {
+  it('caps at Established when marketing < Level 2', () => {
     const systems = makeSystems({ marketing: 1, finance: 3 });
-    expect(applyFloorRule('Operational', systems)).toBe('Structured');
+    expect(applyFloorRule('Advancing', systems)).toBe('Established');
   });
-  it('caps at Structured when finance < Level 2', () => {
+  it('caps at Established when finance < Level 2', () => {
     const systems = makeSystems({ marketing: 3, finance: 1 });
-    expect(applyFloorRule('Scalable', systems)).toBe('Structured');
+    expect(applyFloorRule('Scalable', systems)).toBe('Established');
   });
   it('allows full stage when both marketing & finance >= Level 2', () => {
     const systems = makeSystems({ marketing: 2, finance: 2 });
-    expect(applyFloorRule('Operational', systems)).toBe('Operational');
+    expect(applyFloorRule('Advancing', systems)).toBe('Advancing');
   });
 });
 
