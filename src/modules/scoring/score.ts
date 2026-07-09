@@ -1,7 +1,17 @@
 // Brand Readiness Score calculation + Readiness Stage mapping
 
 import type { BadgeLevel } from './badge';
-import type { SystemKey } from '../systems/registry';
+import { SYSTEMS_REGISTRY, type SystemKey } from '../systems/registry';
+
+/** Set of system keys that count toward the score in Phase 1. */
+const PHASE1_ACTIVE_KEYS = new Set<SystemKey>(
+  SYSTEMS_REGISTRY.filter((s) => s.isActiveInPhase1).map((s) => s.key)
+);
+
+/** Defensive filter: only Phase-1-active systems contribute to score/floor rule. */
+function phase1Only(systems: SystemScore[]): SystemScore[] {
+  return systems.filter((s) => PHASE1_ACTIVE_KEYS.has(s.systemKey));
+}
 
 export type ReadinessStage = 'Emerging' | 'Structured' | 'Operational' | 'Scalable' | 'Exit Ready';
 
@@ -18,16 +28,16 @@ export interface SystemScore {
  * Max score = 8 × 12.5 = 100
  */
 export function calculateBrandReadinessScore(systems: SystemScore[]): number {
-  return systems.reduce((total, s) => {
+  return phase1Only(systems).reduce((total, s) => {
     if (s.badgeLevel >= 3) return total + 12.5;
     if (s.badgeLevel >= 2) return total + 6.25;
     return total;
   }, 0);
 }
 
-/** Returns true if at least one system is at Level 2+ */
+/** Returns true if at least one Phase-1-active system is at Level 2+ */
 export function isScoreVisible(systems: SystemScore[]): boolean {
-  return systems.some((s) => s.badgeLevel >= 2);
+  return phase1Only(systems).some((s) => s.badgeLevel >= 2);
 }
 
 /** Map score to stage label */

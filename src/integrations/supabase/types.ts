@@ -19,25 +19,40 @@ export type Database = {
           created_at: string
           id: string
           industry: string
+          naics_code: string | null
           name: string
+          revenue_range: string | null
+          team_size: string | null
           updated_at: string
           user_id: string
+          years_in_business: number | null
+          zip_code: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           industry?: string
+          naics_code?: string | null
           name?: string
+          revenue_range?: string | null
+          team_size?: string | null
           updated_at?: string
           user_id: string
+          years_in_business?: number | null
+          zip_code?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           industry?: string
+          naics_code?: string | null
           name?: string
+          revenue_range?: string | null
+          team_size?: string | null
           updated_at?: string
           user_id?: string
+          years_in_business?: number | null
+          zip_code?: string | null
         }
         Relationships: []
       }

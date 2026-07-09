@@ -21,6 +21,11 @@ const INDUSTRIES = [
   'Real Estate', 'Education', 'Food & Beverage', 'Manufacturing', 'Other',
 ];
 
+const TEAM_SIZES = ['1', '2-5', '6-10', '11-25', '26-50', '51+'];
+const REVENUE_RANGES = [
+  '<$100k', '$100k-$500k', '$500k-$1M', '$1M-$5M', '$5M+',
+];
+
 type Step = 1 | 2 | 3 | 4 | 5;
 
 const stepVariants = {
@@ -56,9 +61,14 @@ const Onboarding = () => {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 2 state
+  // Step 2 state — business profile (Phase 1 cohort fields)
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [naicsCode, setNaicsCode] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [teamSize, setTeamSize] = useState('');
+  const [revenueRange, setRevenueRange] = useState('');
+  const [yearsInBusiness, setYearsInBusiness] = useState('');
 
   // Step 3 state
   const [selectedSystem, setSelectedSystem] = useState<SystemKey | null>(null);
@@ -74,15 +84,31 @@ const Onboarding = () => {
 
   // ── Step 2: Save business profile ──
   const handleSaveProfile = async () => {
-    if (!businessName.trim() || !industry) {
-      toast({ title: 'Missing fields', description: 'Please enter your business name and industry.', variant: 'destructive' });
+    if (
+      !businessName.trim() || !industry || !naicsCode.trim() || !zipCode.trim() ||
+      !teamSize || !revenueRange || !yearsInBusiness.trim()
+    ) {
+      toast({ title: 'Missing fields', description: 'Please complete every field to continue.', variant: 'destructive' });
+      return;
+    }
+    const years = parseInt(yearsInBusiness, 10);
+    if (Number.isNaN(years) || years < 0 || years > 200) {
+      toast({ title: 'Invalid years', description: 'Enter a valid number of years in business.', variant: 'destructive' });
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase
         .from('businesses')
-        .update({ name: businessName.trim(), industry })
+        .update({
+          name: businessName.trim(),
+          industry,
+          naics_code: naicsCode.trim(),
+          zip_code: zipCode.trim(),
+          team_size: teamSize,
+          revenue_range: revenueRange,
+          years_in_business: years,
+        })
         .eq('user_id', user!.id);
       if (error) throw error;
       setStep(3);
@@ -279,6 +305,61 @@ const Onboarding = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="naics">NAICS Code</Label>
+                      <Input
+                        id="naics"
+                        value={naicsCode}
+                        onChange={(e) => setNaicsCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                        placeholder="541611"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">ZIP Code</Label>
+                      <Input
+                        id="zip"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value.slice(0, 10))}
+                        placeholder="10001"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Team Size</Label>
+                      <Select value={teamSize} onValueChange={setTeamSize}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          {TEAM_SIZES.map((t) => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="years">Years in Business</Label>
+                      <Input
+                        id="years"
+                        value={yearsInBusiness}
+                        onChange={(e) => setYearsInBusiness(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                        placeholder="5"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Annual Revenue Range</Label>
+                    <Select value={revenueRange} onValueChange={setRevenueRange}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {REVENUE_RANGES.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                     <Button className="flex-1" onClick={handleSaveProfile} disabled={loading}>
@@ -300,29 +381,42 @@ const Onboarding = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-2">
-                    {SYSTEMS_REGISTRY.map((def) => (
-                      <motion.button
-                        key={def.key}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedSystem(def.key)}
-                        className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
-                          selectedSystem === def.key
-                            ? 'border-accent bg-accent/10 ring-1 ring-accent'
-                            : 'border-border hover:border-accent/40 hover:bg-muted/50'
-                        }`}
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{def.name}</p>
-                          <p className="text-xs text-muted-foreground">{def.description}</p>
-                        </div>
-                        {def.isCommonStartingPoint && (
-                          <Badge variant="outline" className="ml-2 shrink-0 text-[10px] border-accent/50 text-accent">
-                            Recommended
-                          </Badge>
-                        )}
-                      </motion.button>
-                    ))}
+                    {SYSTEMS_REGISTRY.map((def) => {
+                      const active = def.isActiveInPhase1;
+                      const isSelected = selectedSystem === def.key;
+                      return (
+                        <motion.button
+                          key={def.key}
+                          whileHover={active ? { scale: 1.01 } : undefined}
+                          whileTap={active ? { scale: 0.98 } : undefined}
+                          onClick={() => active && setSelectedSystem(def.key)}
+                          disabled={!active}
+                          className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                            !active
+                              ? 'border-border opacity-50 cursor-not-allowed'
+                              : isSelected
+                                ? 'border-accent bg-accent/10 ring-1 ring-accent'
+                                : 'border-border hover:border-accent/40 hover:bg-muted/50'
+                          }`}
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{def.name}</p>
+                            <p className="text-xs text-muted-foreground">{def.description}</p>
+                          </div>
+                          {active ? (
+                            def.isCommonStartingPoint && (
+                              <Badge variant="outline" className="ml-2 shrink-0 text-[10px] border-accent/50 text-accent">
+                                Recommended
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge variant="outline" className="ml-2 shrink-0 text-[10px]">
+                              Activating Soon
+                            </Badge>
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
