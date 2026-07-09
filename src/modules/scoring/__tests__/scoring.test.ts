@@ -32,11 +32,13 @@ describe('calculateBrandReadinessScore', () => {
   it('returns 12.5 for one system at Level 3', () => {
     expect(calculateBrandReadinessScore(makeSystems({ finance: 3 }))).toBe(12.5);
   });
-  it('returns 100 when all systems are Level 3', () => {
+  it('returns 25 in Phase 1 when marketing & finance are Level 3 (only active systems count)', () => {
     const all3 = Object.fromEntries(['administration', 'training', 'products', 'current_campaign', 'growth', 'logistics', 'marketing', 'finance'].map((k) => [k, 3]));
-    expect(calculateBrandReadinessScore(makeSystems(all3))).toBe(100);
+    expect(calculateBrandReadinessScore(makeSystems(all3))).toBe(25);
   });
-});
+  it('ignores non-Phase-1 systems even at Level 3', () => {
+    expect(calculateBrandReadinessScore(makeSystems({ administration: 3, training: 3 }))).toBe(0);
+  });
 
 describe('getReadinessStage', () => {
   it('Emerging for 0', () => expect(getReadinessStage(0)).toBe('Emerging'));
