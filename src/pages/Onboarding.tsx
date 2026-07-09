@@ -305,6 +305,61 @@ const Onboarding = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="naics">NAICS Code</Label>
+                      <Input
+                        id="naics"
+                        value={naicsCode}
+                        onChange={(e) => setNaicsCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                        placeholder="541611"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">ZIP Code</Label>
+                      <Input
+                        id="zip"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value.slice(0, 10))}
+                        placeholder="10001"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Team Size</Label>
+                      <Select value={teamSize} onValueChange={setTeamSize}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          {TEAM_SIZES.map((t) => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="years">Years in Business</Label>
+                      <Input
+                        id="years"
+                        value={yearsInBusiness}
+                        onChange={(e) => setYearsInBusiness(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                        placeholder="5"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Annual Revenue Range</Label>
+                    <Select value={revenueRange} onValueChange={setRevenueRange}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {REVENUE_RANGES.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                     <Button className="flex-1" onClick={handleSaveProfile} disabled={loading}>
