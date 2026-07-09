@@ -13,7 +13,7 @@ function phase1Only(systems: SystemScore[]): SystemScore[] {
   return systems.filter((s) => PHASE1_ACTIVE_KEYS.has(s.systemKey));
 }
 
-export type ReadinessStage = 'Emerging' | 'Structured' | 'Operational' | 'Scalable' | 'Exit Ready';
+export type ReadinessStage = 'Emerging' | 'Established' | 'Advancing' | 'Scalable' | 'Exit Ready';
 
 export interface SystemScore {
   systemKey: SystemKey;
