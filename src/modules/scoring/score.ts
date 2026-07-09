@@ -28,16 +28,16 @@ export interface SystemScore {
  * Max score = 8 × 12.5 = 100
  */
 export function calculateBrandReadinessScore(systems: SystemScore[]): number {
-  return systems.reduce((total, s) => {
+  return phase1Only(systems).reduce((total, s) => {
     if (s.badgeLevel >= 3) return total + 12.5;
     if (s.badgeLevel >= 2) return total + 6.25;
     return total;
   }, 0);
 }
 
-/** Returns true if at least one system is at Level 2+ */
+/** Returns true if at least one Phase-1-active system is at Level 2+ */
 export function isScoreVisible(systems: SystemScore[]): boolean {
-  return systems.some((s) => s.badgeLevel >= 2);
+  return phase1Only(systems).some((s) => s.badgeLevel >= 2);
 }
 
 /** Map score to stage label */
