@@ -39,6 +39,8 @@ describe('calculateBrandReadinessScore', () => {
   it('ignores non-Phase-1 systems even at Level 3', () => {
     expect(calculateBrandReadinessScore(makeSystems({ administration: 3, training: 3 }))).toBe(0);
   });
+});
+
 
 describe('getReadinessStage', () => {
   it('Emerging for 0', () => expect(getReadinessStage(0)).toBe('Emerging'));
