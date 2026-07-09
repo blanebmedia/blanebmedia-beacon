@@ -1,64 +1,53 @@
-## Plan: Address Claude.ai's Foundation Concerns
+## Goal
 
-### 1. Expand business profile schema (Phase 1 data capture gap)
+Rename Readiness **Stages** to match the canonical spec. Badge level names/points and floor-rule mechanics stay the same — only the stage labels at 25–49 and 50–74 change.
 
-Add the missing fields to `businesses` so the first 100 businesses produce complete records:
+## Canonical spec (source of truth)
 
-- `naics_code` (text)
-- `zip_code` (text)
-- `team_size` (text, bucketed: 1, 2-5, 6-10, 11-25, 26-50, 51+)
-- `revenue_range` (text, bucketed: <$100k, $100k-$500k, $500k-$1M, $1M-$5M, $5M+)
-- `years_in_business` (integer)
+Badge levels (unchanged):
+- L0 Not Activated (0 pts), L1 Activated (0 pts), L2 Structured (6.25 pts), L3 Operational (12.5 pts)
 
-Migration adds the columns (all nullable to avoid breaking existing rows), keeps existing RLS/grants intact.
+Readiness Stages (rename):
+- 0–24 Emerging
+- 25–49 **Established** (was "Structured")
+- 50–74 **Advancing** (was "Operational")
+- 75–89 Scalable
+- 90–100 Exit Ready
 
-**Onboarding flow update (`src/pages/Onboarding.tsx`):**
-Insert a new step between "business basics" and "system activation" that collects the 5 new fields. Keep it short, executive-tone, single screen. Mark all required so Phase 1 cohort data is complete from day one.
+Floor rule: cap at **Established** unless both Marketing and Finance are Badge Level 2+.
 
-### 2. Automated readiness snapshots (Phase 3 trend data starts now)
+## Changes
 
-Today scores are recalculated client-side and only persisted manually. Fix by writing a snapshot whenever badge level changes (the only moment the score can move per scoring rules).
+### 1. Scoring module (`src/modules/scoring/score.ts`)
+- `ReadinessStage` type: `'Emerging' | 'Established' | 'Advancing' | 'Scalable' | 'Exit Ready'`
+- `getReadinessStage`: return `'Established'` at ≥25, `'Advancing'` at ≥50
+- `applyFloorRule`: cap at `'Established'`; update `stageOrder` array
 
-Options — recommend **A**:
+### 2. Tests (`src/modules/scoring/__tests__/scoring.test.ts`)
+- Update expectations: 25 → `Established`, 50 → `Advancing`, floor-rule caps → `Established`
 
-- **A. Postgres trigger on `systems.badge_level` UPDATE** — calls a `SECURITY DEFINER` function that recomputes the business's score+stage from current `systems` rows and inserts a row into `readiness_snapshots`. Guaranteed capture, no client dependency.
-- B. Edge function called from client after badge change — less reliable.
+### 3. Database migration
+- `businesses.stage` default stays `'Emerging'` (no change to existing rows required, but we'll add a one-shot UPDATE to remap any existing `'Structured'` → `'Established'` and `'Operational'` → `'Advancing'` in `businesses.stage` and `readiness_snapshots.stage`)
+- Rewrite the snapshot trigger function from migration `20260709063835` so its stage mapping uses `Established`/`Advancing` and the floor rule caps at `Established`
 
-Plan uses A. Trigger fires only when `NEW.badge_level <> OLD.badge_level`, so no snapshot spam.
+### 4. UI surfaces
+- Grep-and-replace stage strings in any component that renders them (dashboard header, stage pill). Only the 25–49 and 50–74 labels change. Badge label strings (`Structured`, `Operational`) stay put in `badge.ts`.
 
-Also add a daily `pg_cron` job (optional, Phase 1.5) that snapshots all businesses once for baseline continuity — flagged but not built in this pass unless you want it now.
+### 5. Memory
+- Update `mem://logic/readiness-stages` to reflect the new labels and floor-rule cap wording.
 
-### 3. Phase-1 inactive systems must not corrupt scores
+## Out of scope
+- Badge naming, point values, weighting, or floor-rule threshold logic
+- Onboarding flow, business profile schema, Phase-1 guards (already shipped)
+- Backfilling historical snapshots beyond the label remap
 
-Currently the 6 inactive systems still have checklist rows seeded by `handle_new_user`, and a user could toggle them and have it count.
+## Technical details
 
-Fixes:
-- Add `is_active_in_phase` (boolean, default based on system_key) to `systems` OR keep registry as source of truth and enforce at write time.
-- **Recommended:** add a DB-level guard — trigger on `checklist_items` and `systems` that rejects updates when the parent system_key is not in (`marketing`, `finance`). This makes the rule unbypassable.
-- Client: `SystemChecklist.tsx` already should gate, but add an explicit read-only render + disabled checkboxes for non-active systems, with the "Activating Soon" label per project knowledge.
-- Scoring: `calculateBrandReadinessScore` filters to active systems only (defensive — currently it sums all). This prevents any pre-existing dirty data from inflating scores.
+Files touched:
+- `src/modules/scoring/score.ts` (type + two functions)
+- `src/modules/scoring/__tests__/scoring.test.ts` (expected strings)
+- New migration: rewrite `record_readiness_snapshot()` + `UPDATE businesses SET stage=...` + `UPDATE readiness_snapshots SET stage=...`
+- Any `.tsx` files under `src/` that hardcode the old stage strings (to be enumerated during build)
+- `mem://logic/readiness-stages`
 
-### 4. The `.env` "exposure"
-
-Clarification: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (anon key) are **publishable by design** — they're embedded in every Vite bundle the browser downloads. They are not secrets. RLS is what protects data, and your policies are in place. No rotation needed and they cannot be hidden from a frontend app.
-
-What we will still do:
-- Confirm no `SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, or other true secrets are in `.env` or anywhere in the repo. (They're stored as Lovable Cloud secrets — confirmed in context.)
-- Add `.env` to `.gitignore` anyway as hygiene, since Lovable regenerates it locally per environment.
-- Run the security scanner after the migration to verify RLS is airtight on the new columns.
-
-If you want the anon key rotated anyway for peace of mind, I can do it — but it will not change the security posture.
-
-### Execution order
-
-1. Migration: add 5 profile columns + snapshot trigger function + trigger + phase-1 guard trigger.
-2. Update `Onboarding.tsx` with the new profile step.
-3. Update `SystemChecklist.tsx` and `score.ts` to enforce active-systems-only.
-4. Add `.env` to `.gitignore`.
-5. Run security scanner; address any findings.
-
-### Out of scope (flagged for later)
-
-- Daily cron baseline snapshots (Phase 1.5).
-- Backfilling profile fields for any existing test accounts — they'll need to re-complete onboarding or be wiped.
-- Trend visualization UI (Phase 3 per roadmap).
+Note: `badge.ts` `case 2: 'Structured'` / `case 3: 'Operational'` are **badge** labels and remain unchanged — they are distinct from stage labels despite the collision.
