@@ -21,6 +21,11 @@ const INDUSTRIES = [
   'Real Estate', 'Education', 'Food & Beverage', 'Manufacturing', 'Other',
 ];
 
+const TEAM_SIZES = ['1', '2-5', '6-10', '11-25', '26-50', '51+'];
+const REVENUE_RANGES = [
+  '<$100k', '$100k-$500k', '$500k-$1M', '$1M-$5M', '$5M+',
+];
+
 type Step = 1 | 2 | 3 | 4 | 5;
 
 const stepVariants = {
