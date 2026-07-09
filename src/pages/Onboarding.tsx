@@ -381,29 +381,42 @@ const Onboarding = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-2">
-                    {SYSTEMS_REGISTRY.map((def) => (
-                      <motion.button
-                        key={def.key}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedSystem(def.key)}
-                        className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
-                          selectedSystem === def.key
-                            ? 'border-accent bg-accent/10 ring-1 ring-accent'
-                            : 'border-border hover:border-accent/40 hover:bg-muted/50'
-                        }`}
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{def.name}</p>
-                          <p className="text-xs text-muted-foreground">{def.description}</p>
-                        </div>
-                        {def.isCommonStartingPoint && (
-                          <Badge variant="outline" className="ml-2 shrink-0 text-[10px] border-accent/50 text-accent">
-                            Recommended
-                          </Badge>
-                        )}
-                      </motion.button>
-                    ))}
+                    {SYSTEMS_REGISTRY.map((def) => {
+                      const active = def.isActiveInPhase1;
+                      const isSelected = selectedSystem === def.key;
+                      return (
+                        <motion.button
+                          key={def.key}
+                          whileHover={active ? { scale: 1.01 } : undefined}
+                          whileTap={active ? { scale: 0.98 } : undefined}
+                          onClick={() => active && setSelectedSystem(def.key)}
+                          disabled={!active}
+                          className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                            !active
+                              ? 'border-border opacity-50 cursor-not-allowed'
+                              : isSelected
+                                ? 'border-accent bg-accent/10 ring-1 ring-accent'
+                                : 'border-border hover:border-accent/40 hover:bg-muted/50'
+                          }`}
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{def.name}</p>
+                            <p className="text-xs text-muted-foreground">{def.description}</p>
+                          </div>
+                          {active ? (
+                            def.isCommonStartingPoint && (
+                              <Badge variant="outline" className="ml-2 shrink-0 text-[10px] border-accent/50 text-accent">
+                                Recommended
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge variant="outline" className="ml-2 shrink-0 text-[10px]">
+                              Activating Soon
+                            </Badge>
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
