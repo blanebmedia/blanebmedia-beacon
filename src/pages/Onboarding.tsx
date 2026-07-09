@@ -61,9 +61,14 @@ const Onboarding = () => {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 2 state
+  // Step 2 state — business profile (Phase 1 cohort fields)
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [naicsCode, setNaicsCode] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [teamSize, setTeamSize] = useState('');
+  const [revenueRange, setRevenueRange] = useState('');
+  const [yearsInBusiness, setYearsInBusiness] = useState('');
 
   // Step 3 state
   const [selectedSystem, setSelectedSystem] = useState<SystemKey | null>(null);
@@ -79,15 +84,31 @@ const Onboarding = () => {
 
   // ── Step 2: Save business profile ──
   const handleSaveProfile = async () => {
-    if (!businessName.trim() || !industry) {
-      toast({ title: 'Missing fields', description: 'Please enter your business name and industry.', variant: 'destructive' });
+    if (
+      !businessName.trim() || !industry || !naicsCode.trim() || !zipCode.trim() ||
+      !teamSize || !revenueRange || !yearsInBusiness.trim()
+    ) {
+      toast({ title: 'Missing fields', description: 'Please complete every field to continue.', variant: 'destructive' });
+      return;
+    }
+    const years = parseInt(yearsInBusiness, 10);
+    if (Number.isNaN(years) || years < 0 || years > 200) {
+      toast({ title: 'Invalid years', description: 'Enter a valid number of years in business.', variant: 'destructive' });
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase
         .from('businesses')
-        .update({ name: businessName.trim(), industry })
+        .update({
+          name: businessName.trim(),
+          industry,
+          naics_code: naicsCode.trim(),
+          zip_code: zipCode.trim(),
+          team_size: teamSize,
+          revenue_range: revenueRange,
+          years_in_business: years,
+        })
         .eq('user_id', user!.id);
       if (error) throw error;
       setStep(3);
