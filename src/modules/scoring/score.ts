@@ -13,7 +13,7 @@ function phase1Only(systems: SystemScore[]): SystemScore[] {
   return systems.filter((s) => PHASE1_ACTIVE_KEYS.has(s.systemKey));
 }
 
-export type ReadinessStage = 'Emerging' | 'Structured' | 'Operational' | 'Scalable' | 'Exit Ready';
+export type ReadinessStage = 'Emerging' | 'Established' | 'Advancing' | 'Scalable' | 'Exit Ready';
 
 export interface SystemScore {
   systemKey: SystemKey;
@@ -44,13 +44,13 @@ export function isScoreVisible(systems: SystemScore[]): boolean {
 export function getReadinessStage(score: number): ReadinessStage {
   if (score >= 90) return 'Exit Ready';
   if (score >= 75) return 'Scalable';
-  if (score >= 50) return 'Operational';
-  if (score >= 25) return 'Structured';
+  if (score >= 50) return 'Advancing';
+  if (score >= 25) return 'Established';
   return 'Emerging';
 }
 
 /**
- * Floor rule: stage cannot exceed "Structured" unless both
+ * Floor rule: stage cannot exceed "Established" unless both
  * Marketing AND Finance are at Level 2+.
  */
 export function applyFloorRule(
@@ -64,9 +64,9 @@ export function applyFloorRule(
   const financeReady = finance && finance.badgeLevel >= 2;
 
   if (!marketingReady || !financeReady) {
-    // Cap at Structured
-    const stageOrder: ReadinessStage[] = ['Emerging', 'Structured', 'Operational', 'Scalable', 'Exit Ready'];
-    const cappedIndex = Math.min(stageOrder.indexOf(stage), 1); // 1 = Structured
+    // Cap at Established
+    const stageOrder: ReadinessStage[] = ['Emerging', 'Established', 'Advancing', 'Scalable', 'Exit Ready'];
+    const cappedIndex = Math.min(stageOrder.indexOf(stage), 1); // 1 = Established
     return stageOrder[cappedIndex];
   }
 
